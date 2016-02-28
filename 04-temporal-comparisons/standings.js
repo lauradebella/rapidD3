@@ -2,16 +2,19 @@
 /* Constants for our drawing area */
 var width = 750,
     height = 500,
-    margin = { top: 20, right: 20, bottom: 20, left:70 };
+    margin = { top: 20, right: 20, bottom: 70, left:70 };
 
 var parseDate = d3.time.format("%Y-%m-%d").parse;
+var formateDate = d3.time.format("%b %d");
 
 var x = d3.time.scale().range([margin.left, width - margin.right]);
 var y = d3.scale.linear().range([height - margin.bottom, margin.top]);
 
 var xAxis = d3.svg.axis()
     .scale(x)
-    .orient("bottom");
+    .orient("bottom")
+    .ticks(d3.time.weeks, 1)
+    .tickFormat(formateDate);
 var yAxis = d3.svg.axis()
     .scale(y)
     .orient("left");
@@ -97,7 +100,11 @@ var redraw = function(data) {
 
     axis.each(function(d){
         d3.select(this).call(d.axis);
-    })
+    });
+
+    axis.selectAll(".x.axis text")
+        .style("text-anchor", "end")
+        .attr({dx: "-0.8em", transform: "rotate(-65)"});
 };
 
 function gameOutcome(team, game, games){
