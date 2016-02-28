@@ -4,6 +4,23 @@ var width = 750,
     height = 500,
     margin = { top: 20, right: 20, bottom: 20, left:70 };
 
+var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+var x = d3.time.scale().range([margin.left, width - margin.right]);
+var y = d3.scale.linear().range([height - margin.bottom, margin.top]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+//realy get data in lines
+var pointLine = d3.svg.line()
+    .x(function(d){return x(d.date);})
+    .y(function(d){return y(d.leaguePoints); });
+
 /* The drawing area */
 var svg = d3.select("#standings-chart")
   .append("svg")
@@ -13,6 +30,13 @@ var svg = d3.select("#standings-chart")
 /* Our standard data reloading function */
 var reload = function() {
   d3.json('eng2-2013-14.json', function(results){
+
+    //convert string to data
+    results.forEach(function(d){ d.Date = parseDate(d.Date); });
+
+    x.domain([results[0].Date, results[results.length-1].Date]);
+    y.domain([0,100]);
+
     data = d3.merge(
         results.map(function(d){
             d.Games.forEach(function(g){
@@ -49,7 +73,31 @@ var reload = function() {
 
 /* Our standard graph drawing function */
 var redraw = function(data) {
-  // Fill in here
+    var lines = svg.selectAll('.line-graph')
+        .data(data.entries());
+
+    lines.enter()
+        .append("g") //group element
+        .attr("class", "line-graph")
+        .attr("transform", "translate("+xAxis.tickPadding()+", 0)");
+
+    var path = lines.append("path")
+        .datum(function(d){ return d.value; }) //similar to data
+        .attr("d", function(d){ return pointLine(d); });
+
+    var axis = svg.selectAll(".axis")
+        .data([{axis:xAxis, x:0, y:y(0), clazz:"x"},
+                {axis:yAxis,x:x.range()[0], y:0, clazz:"y"}]);
+
+    axis.enter().append("g")
+        .attr("class", function(d){ return "axis "+d.clazz;})
+        .attr("transform", function(d){
+            return "translate("+d.x+","+d.y+")";
+        });
+
+    axis.each(function(d){
+        d3.select(this).call(d.axis);
+    })
 };
 
 function gameOutcome(team, game, games){
