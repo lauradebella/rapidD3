@@ -24,6 +24,15 @@ var pointLine = d3.svg.line()
     .x(function(d){return x(d.date);})
     .y(function(d){return y(d.leaguePoints); });
 
+var colors24 = [
+  "#393b79","#5254a3","#6b6ecf","#9c9ede",
+  "#3182bd","#6baed6","#9ecae1","#c6dbef",
+  "#e6550d","#fd8d3c","#fdae6b","#fdd0a2",
+  "#31a354","#74c476","#a1d99b","#c7e9c0",
+  "#756bb1","#9e9ac8","#bcbddc","#dadaeb",
+  "#843c39","#ad494a","#d6616b","#e7969c"
+];
+
 /* The drawing area */
 var svg = d3.select("#standings-chart")
   .append("svg")
@@ -51,8 +60,8 @@ var reload = function() {
 
     var dataMap = d3.map();
     d3.merge([
-        d3.nest().key(function(d){ return d.Away; }).entries(data),
-        d3.nest().key(function(d){ return d.Home; }).entries(data)
+        d3.nest().key(function(d){ return makeId(d.Away); }).entries(data),
+        d3.nest().key(function(d){ return makeId(d.Home); }).entries(data)
     ]).forEach(function(d){
         //se ja tiver o time
         if(dataMap.has(d.key)){
@@ -80,13 +89,31 @@ var redraw = function(data) {
         .data(data.entries());
 
     lines.enter()
-        .append("g") //group element
-        .attr("class", "line-graph")
-        .attr("transform", "translate("+xAxis.tickPadding()+", 0)");
+        .append("g"); //group element
+        
+    lines.sort(function(a,b){
+        var aPoints = a.value[a.value.length -1].leaguePoints;
+        var bPoints = b.value[b.value.length -1].leaguePoints;
+        return d3.descending(aPoints,bPoints);
+        });
+
+    lines.each(function(d,i){
+        d3.select(this)
+            .style("stroke", colors24[i])
+            .attr("class", "line-graph")
+            .attr("transform", "translate("+xAxis.tickPadding()+", 0)")
+            .attr("id", d.key)
+            .attr("data-legend", d.value[0].team);
+    });
 
     var path = lines.append("path")
         .datum(function(d){ return d.value; }) //similar to data
         .attr("d", function(d){ return pointLine(d); });
+
+    svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", "translate("+(margin.left + 20)+","+y(95)+")")
+        .call(d3.legend);
 
     var axis = svg.selectAll(".axis")
         .data([{axis:xAxis, x:0, y:y(0), clazz:"x"},
@@ -105,10 +132,11 @@ var redraw = function(data) {
     axis.selectAll(".x.axis text")
         .style("text-anchor", "end")
         .attr({dx: "-0.8em", transform: "rotate(-65)"});
+
 };
 
-function gameOutcome(team, game, games){
-    var isAway = (game.Away === team);
+function gameOutcome(teamId, game, games){
+    var isAway = (makeId(game.Away) === teamId);
     var goals = isAway? +game.AwayScore : +game.HomeScore;
     var allowed = isAway? +game.HomeScore : +game.AwayScore;
     var decision = (goals > allowed)? 'win' : (goals < allowed) ? 'loss' :
@@ -116,7 +144,7 @@ function gameOutcome(team, game, games){
     var points = (goals>allowed)? 3 : (goals<allowed) ? 0 : 1;
     return {
         date : game.Date,
-        team : team,
+        team : isAway? game.Away : game.Home,
         align : isAway? 'away' : 'home',
         opponent : isAway? game.Home : game.Away,  
         goals: goals,
@@ -126,6 +154,10 @@ function gameOutcome(team, game, games){
         points: points,
         leaguePoints: d3.sum(games, function(d){ return d.points; }) + points
     };
+}
+
+function makeId(string){
+    return string.replace(/[^A-Za-z0-9]/g,'');
 }
 
 reload();
