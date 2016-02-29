@@ -33,6 +33,10 @@ var colors24 = [
   "#843c39","#ad494a","#d6616b","#e7969c"
 ];
 
+var gameDiv = d3.select("body")
+    .append("div") 
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 /* The drawing area */
 var svg = d3.select("#standings-chart")
   .append("svg")
@@ -122,7 +126,10 @@ var redraw = function(data) {
         d3.select(this)
             .attr("cx", x(d.date))
             .attr("cy", y(d.leaguePoints))
-            .style("fill", color);
+            .style("fill", color)
+            .on("mouseover", function(e){return showGame(d,color);})
+            .on("click", function(e){return showGame(d,color);})
+            .on("mouseout", function(e){return hideGame();});
     });
 
 
@@ -174,6 +181,34 @@ function gameOutcome(teamId, game, games){
 
 function makeId(string){
     return string.replace(/[^A-Za-z0-9]/g,'');
+}
+
+function showGame(d,color) {
+    gameDiv.transition()
+        .duration(20)
+        .style("opacity", 0)
+        .style("background-color", "white");
+
+    gameDiv
+        .html(d.team+"(" + formateDate(d.date) + " - " + d.align + ")<br/>"
+            +"Versus: " + d.opponent + "<br/>"
+            +"Venue: "+ d.venue + "<br/>"
+            +"Result: "+ d.goals + " - " + d.allowed + " " + d.decision + "<br/>"
+            +"Points: "+ d.leaguePoints)
+        .style({left:(d3.event.pageX +10) + "px",
+                top:(d3.event.pageY -40) + "px"
+            })
+        .transition()
+        .duration(200)
+        .style("opacity", 0.9)
+        .style("background-color", color);
+}
+
+function hideGame(){
+    gameDiv.transition()
+        .duration(500)
+        .style("opacity", 0)
+        .style("background-color", "white");
 }
 
 reload();
