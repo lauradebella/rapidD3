@@ -110,6 +110,22 @@ var redraw = function(data) {
         .datum(function(d){ return d.value; }) //similar to data
         .attr("d", function(d){ return pointLine(d); });
 
+    var circles = lines.selectAll("circle")
+        .data(function(d){return d.value;});
+
+    circles.enter()
+        .append("circle")
+        .attr("r", 3);
+
+    circles.each(function (d){
+        var color = d3.select(this.parentElement).style("stroke");
+        d3.select(this)
+            .attr("cx", x(d.date))
+            .attr("cy", y(d.leaguePoints))
+            .style("fill", color);
+    });
+
+
     svg.append("g")
         .attr("class", "legend")
         .attr("transform", "translate("+(margin.left + 20)+","+y(95)+")")
