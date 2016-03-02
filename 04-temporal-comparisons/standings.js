@@ -107,7 +107,8 @@ var redraw = function(data) {
             .attr("class", "line-graph")
             .attr("transform", "translate("+xAxis.tickPadding()+", 0)")
             .attr("id", d.key)
-            .attr("data-legend", d.value[0].team);
+            .attr("data-legend", d.value[0].team)
+            //.on("click", function(e){return hideAllLines();});
     });
 
     var path = lines.append("path")
@@ -185,7 +186,7 @@ function makeId(string){
 
 function showGame(d,color) {
     gameDiv.transition()
-        .duration(20)
+        .duration(200)
         .style("opacity", 0)
         .style("background-color", "white");
 
@@ -202,6 +203,54 @@ function showGame(d,color) {
         .duration(200)
         .style("opacity", 0.9)
         .style("background-color", color);
+}
+
+function showGameMock(){
+
+    d = {
+        align: "home",
+        allowed: 3,
+        date: '20/01/2014',
+        decision: "loss",
+        goals: 0,
+        leaguePoints: 31,
+        opponent: "Rochdale",
+        points: 0,
+        team: "Hartlepool United",
+        venue: "Victoria Park",
+    }
+
+    color = "#393b79"; 
+
+    gameDiv
+        .html(d.team+"(" + d.date + " - " + d.align + ")<br/>"
+            +"Versus: " + d.opponent + "<br/>"
+            +"Venue: "+ d.venue + "<br/>"
+            +"Result: "+ d.goals + " - " + d.allowed + " " + d.decision + "<br/>"
+            +"Points: "+ d.leaguePoints)
+        .style({left:0 + "px",
+                top:0 + "px"
+            })
+        .transition()
+        .duration(200)
+        .style("opacity", 0.9)
+        .style("background-color", color);
+}
+
+function hideAllLines(){
+    
+    svg.selectAll('.line-graph')
+        .transition()
+        .duration(500)
+        .style("display", "none");
+}
+
+function showAllLines(){
+    
+    svg.selectAll('.line-graph')
+        .transition()
+        .duration(500)
+        .style("display", "initial");
 }
 
 function hideGame(){
