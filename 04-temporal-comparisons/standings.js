@@ -49,7 +49,7 @@ var reload = function() {
 
     //convert string to data
     results.forEach(function(d){ d.Date = parseDate(d.Date); });
-
+    //debugger;
     x.domain([results[0].Date, results[results.length-1].Date]);
     y.domain([0,100]);
 
@@ -180,6 +180,33 @@ function gameOutcome(teamId, game, games){
     };
 }
 
+function gameOutcomeHome(teamId, game, games){
+    var isAway = (makeId(game.Away) === teamId);
+    var goals = isAway? +game.AwayScore : +game.HomeScore;
+    var allowed = isAway? +game.HomeScore : +game.AwayScore;
+    var decision = (goals > allowed)? 'win' : (goals < allowed) ? 'loss' :
+        'draw';
+    var points = (goals>allowed)? 3 : (goals<allowed) ? 0 : 1;
+    return {
+        date : game.Date,
+        team : isAway? game.Away : game.Home,
+        align : isAway? 'away' : 'home',
+        opponent : isAway? game.Home : game.Away,  
+        goals: goals,
+        allowed : allowed,
+        venue: game.Venue,
+        decision: decision,
+        points: points,
+        leaguePoints: d3.sum(games, function(d){ 
+            if(teamId != isAway){ 
+                return d.points; 
+            }else{
+                return 0;
+            }
+         }) + points
+    };
+}
+
 function makeId(string){
     return string.replace(/[^A-Za-z0-9]/g,'');
 }
@@ -279,6 +306,46 @@ function hideGame(){
         .style("opacity", 0)
         .style("background-color", "white");
 }
+
+function changeData(){
+    //changing scale
+    //x nao muda pois sao os mesmos eixos
+    //x.domain([results[0].Date, results[results.length-1].Date]);
+    y.domain([0,10]);
+
+    dataMap = d3.map();
+
+    d3.merge([
+        d3.nest().key(function(d){ return makeId(d.Away); }).entries(data),
+        d3.nest().key(function(d){ return makeId(d.Home); }).entries(data)
+    ]).forEach(function(d){
+        //se ja tiver o time
+        if(dataMap.has(d.key)){
+            dataMap.set(d.key, d3.merge([dataMap.get(d.key), d.values])
+                .sort(function(a,b){ return d3.descending(b.Date, a.Date); }));   
+        }else{ //se nao tiver o time
+            dataMap.set(d.key, d.values);
+        }
+    }); 
+
+    dataMap.forEach(function(key,values){
+            var games = [];
+            values.forEach(function(g,i){
+                games.push(gameOutcomeHome(key,g,games));
+            });
+            dataMap.set(key, games);
+            //debugger;
+    });
+
+    var svg = d3.select("body").transition();
+    svg.select(".y.axis") // change the y axis
+        .duration(750)
+        .call(yAxis);
+    svg.select('.line-graph') // change the line
+        .duration(750)
+        .attr("d", redraw(dataMap));
+}
+
 
 reload();
 
