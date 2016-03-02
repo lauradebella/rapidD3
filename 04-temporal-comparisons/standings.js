@@ -108,7 +108,7 @@ var redraw = function(data) {
             .attr("transform", "translate("+xAxis.tickPadding()+", 0)")
             .attr("id", d.key)
             .attr("data-legend", d.value[0].team)
-            //.on("click", function(e){return hideAllLines();});
+            .on("click", function(e){return filterGame(d);});
     });
 
     var path = lines.append("path")
@@ -235,6 +235,26 @@ function showGameMock(){
         .duration(200)
         .style("opacity", 0.9)
         .style("background-color", color);
+}
+
+function filterGame(d){
+
+    var lines = svg.selectAll('.line-graph')
+    lines.each(function(e){
+            if(e.key == d.key){
+                return d3.select(this)
+                  .transition()
+                  .duration(500)
+                  .style("display", "initial");
+                //return console.log(e.key);
+            }else{
+                return d3.select(this)
+                  .transition()
+                  .duration(500)
+                  .style("display", "none");
+            }
+       });
+
 }
 
 function hideAllLines(){
