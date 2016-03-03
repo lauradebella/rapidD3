@@ -337,11 +337,13 @@ function changeData(){
             //debugger;
     });
 
-    var svg = d3.select("body").transition();
+    var svg = d3.select("body");
     svg.select(".y.axis") // change the y axis
+        .transition()
         .duration(750)
         .call(yAxis);
     svg.select('.line-graph') // change the line
+        .transition()
         .duration(750)
         .attr("d", redraw(dataMap));
 }
